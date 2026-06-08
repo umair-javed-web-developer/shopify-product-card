@@ -1,0 +1,260 @@
+{% assign card_product = card_product | default: product %}
+
+{% if card_product.title != blank %}
+{% assign first_variant = card_product.selected_or_first_available_variant %}
+{% assign max_visible = 3 %}
+{% assign total_variants = card_product.variants | size %}
+{% assign overflow_count = total_variants | minus: max_visible %}
+
+<div class="pc-card" data-product-id="{{ card_product.id }}">
+
+
+  {%- comment -%} MAIN IMAGE {%- endcomment -%}
+  <a href="{{ card_product.url }}" class="pc-main-image-wrap">
+    <img
+      class="pc-main-image"
+      src="{{ card_product.featured_image | image_url: width: 480 }}"
+      alt="{{ card_product.title | escape }}"
+      width="480" height="360"
+      loading="lazy"
+    >
+  </a>
+
+  {%- comment -%} VARIANTS ROW {%- endcomment -%}
+  {%- if total_variants > 1 -%}
+  <div class="pc-variants">
+
+    {%- for variant in card_product.variants -%}
+      {%- if forloop.index <= max_visible -%}
+        {%- assign v_img = variant.featured_image | default: card_product.featured_image -%}
+        <a
+          class="pc-variant-thumb{% if forloop.first %} is-active{% endif %}"
+         
+          data-img="{{ v_img | image_url: width: 480 }}"
+          data-price="{{ variant.price | money }}"
+          data-compare="{{ variant.compare_at_price | money }}"
+          data-compare-raw="{{ variant.compare_at_price }}"
+          data-price-raw="{{ variant.price }}"
+          data-avail="{{ variant.available }}"
+          aria-label="{{ variant.title | escape }}"
+        >
+          <img
+            src="{{ v_img | image_url: width: 120 }}"
+            alt="{{ variant.title | escape }}"
+            width="120" height="90"
+            loading="lazy"
+          >
+        </a>
+      {%- endif -%}
+    {%- endfor -%}
+
+    {%- if overflow_count > 0 -%}
+      <a
+        class="pc-overflow-bubble"
+        href="{{ card_product.url }}"
+        aria-label="View all {{ total_variants }} variants"
+        title="View all {{ total_variants }} variants"
+      >+{{ overflow_count }}</a>
+    {%- endif -%}
+
+  </div>
+  {%- endif -%}
+
+  {%- comment -%} INFO {%- endcomment -%}
+  <div class="pc-info">
+    <h2 class="pc-title">
+      <a href="{{ card_product.url }}">{{ card_product.title }}</a>
+    </h2>
+    {%- if card_product.type != blank -%}
+      <p class="pc-category">{{ card_product.type | upcase }}</p>
+    {%- endif -%}
+    {%- assign rating    = card_product.metafields.custom.rating.value | plus: 0 -%}
+{%- assign noreviews = card_product.metafields.custom.noreviews.value | plus: 0 -%}
+{%- if rating > 0 -%}
+  <div class="pc-rating">
+    <div class="pc-stars" aria-label="{{ rating }} out of 5 stars">
+      {%- for i in (1..5) -%}
+        {%- if i <= rating -%}
+          <svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F5A623" stroke="#F5A623" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        {%- else -%}
+          <svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#e0e0e0" stroke="#e0e0e0" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+    {%- if noreviews > 0 -%}
+      <span class="pc-review-count">({{ noreviews }})</span>
+    {%- endif -%}
+  </div>
+{%- endif -%}
+    <div class="pc-pricing">
+      {%- if first_variant.compare_at_price > first_variant.price -%}
+        <span class="pc-price-sale">{{ first_variant.price | money }}</span>
+        <span class="pc-price-compare">{{ first_variant.compare_at_price | money }}</span>
+      {%- else -%}
+        <span class="pc-price-regular">{{ first_variant.price | money }}</span>
+      {%- endif -%}
+    </div>
+  </div>
+
+  {%- comment -%} ADD TO CART {%- endcomment -%}
+  {%- form 'product', card_product, novalidate: 'novalidate' -%}
+    <input type="hidden" name="id" class="pc-variant-input" value="{{ first_variant.id }}">
+    <input type="hidden" name="quantity" value="1">
+    <button
+      type="submit" name="add"
+      class="pc-atc-btn"
+      {% unless first_variant.available %}disabled{% endunless %}
+    >
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+        <path d="M6 2L3 6V20C3 21.1 3.9 22 5 22H19C20.1 22 21 21.1 21 20V6L18 2H6Z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M3 6H21" stroke="white" stroke-width="2"/>
+        <path d="M16 10C16 12.2 14.2 14 12 14C9.8 12.2 8 12.2 8 10" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="pc-atc-text">
+        {%- if first_variant.available -%}BUY NOW{%- else -%}SOLD OUT{%- endif -%}
+      </span>
+    </button>
+  {%- endform -%}
+
+</div>
+
+{% comment %} ── STYLES (include once via your theme.liquid or CSS file) ── {% endcomment %}
+<style>
+  .pc-card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 6px 30px rgba(0,0,0,.10);
+    padding: 12px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .pc-wishlist {
+    position: absolute; top: 14px; right: 14px;
+    background: none; border: none; cursor: pointer;
+    padding: 4px; z-index: 2; line-height: 0;
+  }
+  .pc-wishlist svg path { transition: fill .2s; }
+  .pc-wishlist.is-wishlisted svg path { fill: #E05C2A; }
+
+  .pc-main-image-wrap {
+    display: block; width: 100%; aspect-ratio: 4/3;
+    overflow: hidden; border-radius: 8px; background: #f6f6f6;
+  }
+  .pc-main-image {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    transition: opacity .18s ease, transform .3s ease;
+  }
+  .pc-main-image-wrap:hover .pc-main-image { transform: scale(1.1); }
+
+  /* Variant row */
+  .pc-variants { display: flex; gap: 6px; align-items: center; }
+
+  .pc-variant-thumb {
+    width: 25px; height: 25px; border-radius: 4px;
+    border: 2px solid transparent;
+    background: #f5f5f5; cursor: pointer; overflow: hidden;
+    flex-shrink: 0; display: block;
+    transition: border-color .15s ease;
+    text-decoration: none;
+  }
+  .pc-variant-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pc-variant-thumb.is-active { border-color: #333; }
+  .pc-variant-thumb:not(.is-active):hover { border-color: #ccc; }
+
+  /* Overflow bubble */
+  .pc-overflow-bubble {
+    
+    font-size: 11px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; cursor: pointer; text-decoration: none;
+    transition: background .18s, transform .15s;
+  }
+  .pc-overflow-bubble:hover { transform: scale(1.3); }
+
+  /* Info */
+  .pc-info { display: flex; flex-direction: column; gap: 4px; }
+  .pc-title { font-size: 16px; font-weight: 600; color: #111; line-height: 1.25; letter-spacing: -.01em; margin-bottom: 0 }
+  .pc-title a { text-decoration: none; color: inherit; }
+  .pc-title a:hover { color: #E05C2A; }
+  .pc-category { font-size: 10px; font-weight: 700; color: #E05C2A; letter-spacing: .07em; margin: 0 }
+  .pc-pricing { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .pc-price-sale { font-size: 16px; font-weight: 700; color: #111; }
+  .pc-price-compare { font-size: 13px; color: #6f0000ff; text-decoration: line-through; }
+  .pc-price-regular { font-size: 16px; font-weight: 800; color: #111; }
+
+  /* ATC */
+  .pc-atc-btn {
+    width: 100%; background: #1a1a2e; color: #fff;
+    border: none; border-radius: 6px; padding: 13px 16px;
+    font-size: 12px; font-weight: 700; letter-spacing: .09em;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 9px;
+    transition: background .2s, transform .15s;
+  }
+  .pc-atc-btn:hover:not(:disabled) { background: #2d2d4e; }
+  .pc-atc-btn:active { transform: scale(.98); }
+  .pc-atc-btn:disabled { background: #999; cursor: not-allowed; }
+</style>
+
+{% comment %} ── JS (include once via your theme JS bundle) ── {% endcomment %}
+<script>
+document.querySelectorAll('.pc-card').forEach(function(card) {
+  const mainImg     = card.querySelector('.pc-main-image');
+  const pricingEl   = card.querySelector('.pc-pricing');
+  const variantInput= card.querySelector('.pc-variant-input');
+  const atcBtn      = card.querySelector('.pc-atc-btn');
+  const atcText     = atcBtn ? atcBtn.querySelector('.pc-atc-text') : null;
+  const thumbs      = card.querySelectorAll('.pc-variant-thumb');
+
+  thumbs.forEach(function(thumb) {
+    thumb.addEventListener('click', function(e) {
+      e.preventDefault(); // stops navigation — we do it manually below
+
+      // 1. Active ring
+      thumbs.forEach(function(t) { t.classList.remove('is-active'); });
+      thumb.classList.add('is-active');
+
+      // 2. Swap main image
+      var newSrc = thumb.getAttribute('data-img');
+      if (mainImg && newSrc) {
+        mainImg.style.opacity = '0';
+        setTimeout(function() { mainImg.src = newSrc; mainImg.style.opacity = '1'; }, 150);
+      }
+
+      // 3. Update pricing
+      var price   = thumb.getAttribute('data-price');
+      var compare = thumb.getAttribute('data-compare');
+      var priceRaw   = parseInt(thumb.getAttribute('data-price-raw'), 10);
+      var compareRaw = parseInt(thumb.getAttribute('data-compare-raw'), 10);
+      if (pricingEl) {
+        if (compareRaw && compareRaw > priceRaw) {
+          pricingEl.innerHTML = '<span class="pc-price-sale">' + price + '</span><span class="pc-price-compare">' + compare + '</span>';
+        } else {
+          pricingEl.innerHTML = '<span class="pc-price-regular">' + price + '</span>';
+        }
+      }
+
+      // 4. Update hidden variant input (for ATC form)
+      var variantUrl = thumb.getAttribute('href'); // /products/slug?variant=123456
+      var variantId  = new URLSearchParams(variantUrl.split('?')[1]).get('variant');
+      if (variantInput && variantId) variantInput.value = variantId;
+
+      // 5. Update ATC availability
+      var avail = thumb.getAttribute('data-avail') === 'true';
+      if (atcBtn && atcText) {
+        atcBtn.disabled = !avail;
+        atcBtn.style.background = avail ? '#1a1a2e' : '#999';
+        atcText.textContent = avail ? 'ADD TO CART' : 'SOLD OUT';
+      }
+
+      // 6. Navigate to product page with variant pre-selected
+      window.location.href = variantUrl;
+    });
+  });
+});
+</script>
+
+{% endif %}
